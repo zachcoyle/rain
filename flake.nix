@@ -34,7 +34,7 @@
           wayland-protocols
         ];
 
-        rain2 = crane.lib.${system}.buildPackage {
+        rain = crane.lib.${system}.buildPackage {
           src = ./.;
           inherit buildInputs;
 
@@ -47,15 +47,15 @@
       in
       {
         checks = {
-          my-crate = rain2;
+          my-crate = rain;
         };
 
         packages = {
-          inherit rain2;
-          default = rain2;
+          inherit rain;
+          default = rain;
         };
 
-        apps.default = flake-utils.lib.mkApp { drv = rain2; };
+        apps.default = flake-utils.lib.mkApp { drv = rain; };
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
