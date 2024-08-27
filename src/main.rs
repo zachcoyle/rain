@@ -70,25 +70,72 @@ impl Model for AppData {
   }
 }
 
-// latitude=39.7672
-// longitude=-85.898
-// current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m
-// hourly=temperature_2m,relative_humidity_2m,dew_point_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,visibility,wind_gusts_10m
-// daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,uv_index_max,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max
-// temperature_unit=fahrenheit
-// forecast_hours=24
-// wind_speed_unit=mph
-// precipitation_unit=inch
-// timezone=America%2FNew_York
-// forecast_days=1
-// past_hours=24
 fn get_weather_data(coords: &LatLng) -> Option<Meteo> {
+  let current_params: String = vec![
+    "temperature_2m",
+    "relative_humidity_2m",
+    "apparent_temperature",
+    "is_day",
+    "precipitation",
+    "rain",
+    "showers",
+    "snowfall",
+    "weather_code",
+    "cloud_cover",
+    "pressure_msl",
+    "surface_pressure",
+    "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_gusts_10m",
+  ]
+  .join(",");
+
+  let hourly_params: String = vec![
+    "temperature_2m",
+    "relative_humidity_2m",
+    "dew_point_2m",
+    "precipitation_probability",
+    "precipitation",
+    "rain",
+    "showers",
+    "snowfall",
+    "weather_code",
+    "visibility",
+    "wind_gusts_10m",
+  ]
+  .join(",");
+
+  let daily_params: String = vec![
+    "weather_code",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "sunrise",
+    "sunset",
+    "daylight_duration",
+    "uv_index_max",
+    "precipitation_sum",
+    "rain_sum",
+    "snowfall_sum",
+    "precipitation_probability_max",
+  ]
+  .join(",");
+
   let query = vec![
-    ("latitude", coords.lat.to_string()),
-    ("longitude", coords.lng.to_string()),
-    ("current", String::from("temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m")),
-    ("hourly", String::from("temperature_2m,relative_humidity_2m,dew_point_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,visibility,wind_gusts_10m"),),
-    ("daily", String::from("weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,uv_index_max,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max")),
+    (
+      "latitude",
+      coords
+        .lat
+        .to_string(),
+    ),
+    (
+      "longitude",
+      coords
+        .lng
+        .to_string(),
+    ),
+    ("current", current_params),
+    ("hourly", hourly_params),
+    ("daily", daily_params),
     ("temperature_unit", String::from("fahrenheit")),
     ("wind_speed_unit", String::from("mph")),
     ("precipitation_unit", String::from("inch")),
@@ -98,7 +145,11 @@ fn get_weather_data(coords: &LatLng) -> Option<Meteo> {
     ("past_hours", String::from("24")),
   ];
 
-  let response = Client::new().get(BASE_URL).query(&query).send().ok()?;
+  let response = Client::new()
+    .get(BASE_URL)
+    .query(&query)
+    .send()
+    .ok()?;
   println!("{:?}", response);
   let json = response.json::<Meteo>();
   println!("{:?}", json);
@@ -116,7 +167,8 @@ fn convert_geohash_to_coords(gh: &str) -> Option<LatLng> {
 fn main() -> Result<(), vizia::ApplicationError> {
   env_logger::init();
   Application::new(|cx| {
-    cx.add_stylesheet(STYLE).expect("Failed to add stylesheet");
+    cx.add_stylesheet(STYLE)
+      .expect("Failed to add stylesheet");
 
     AppData::default().build(cx);
 
@@ -145,36 +197,72 @@ fn main() -> Result<(), vizia::ApplicationError> {
         HStack::new(cx, |cx| {
           VStack::new(cx, |cx| {
             Label::new(cx, "time");
-            // let time = forecast
-            //   .clone()
-            //   .current
-            //   .and_then(|x| x.time)
-            //   .or_else(|| Some(String::from("n/a")))
-            //   .unwrap();
-            // Label::new(cx, time);
-            Label::new(cx, forecast.current.time);
+            Label::new(
+              cx,
+              forecast
+                .current
+                .time,
+            );
           });
           VStack::new(cx, |cx| {
             Label::new(cx, "temp");
-            // let temp_2_m = forecast
-            //   .clone()
-            //   .current
-            //   .and_then(|x| x.temperature_2_m)
-            //   .or_else(|| Some(0.0))
-            //   .unwrap();
-            // Label::new(cx, temp_2_m);
-            Label::new(cx, forecast.current.temperature_2_m);
+            Label::new(
+              cx,
+              format!(
+                "{}{}",
+                forecast
+                  .current
+                  .temperature_2_m,
+                forecast
+                  .current_units
+                  .temperature_2_m
+              ),
+            );
           });
           VStack::new(cx, |cx| {
             Label::new(cx, "wind speed");
-            // let wind_speed_10_m = forecast
-            //   .clone()
-            //   .current
-            //   .and_then(|x| x.wind_speed_10_m)
-            //   .or_else(|| Some(0.0))
-            //   .unwrap();
-            // Label::new(cx, wind_speed_10_m);
-            Label::new(cx, forecast.current.wind_speed_10_m);
+            Label::new(
+              cx,
+              format!(
+                "{}{}",
+                forecast
+                  .current
+                  .wind_speed_10_m,
+                forecast
+                  .current_units
+                  .wind_speed_10_m
+              ),
+            );
+          });
+          VStack::new(cx, |cx| {
+            Label::new(cx, "high temp");
+            Label::new(
+              cx,
+              format!(
+                "{}{}",
+                forecast
+                  .daily
+                  .temperature_2_m_max[0],
+                forecast
+                  .daily_units
+                  .temperature_2_m_max
+              ),
+            );
+          });
+          VStack::new(cx, |cx| {
+            Label::new(cx, "low temp");
+            Label::new(
+              cx,
+              format!(
+                "{}{}",
+                forecast
+                  .daily
+                  .temperature_2_m_min[0],
+                forecast
+                  .daily_units
+                  .temperature_2_m_min
+              ),
+            );
           });
         });
       }
