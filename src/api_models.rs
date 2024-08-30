@@ -38,7 +38,7 @@ pub struct Current {
   pub rain: f64,
   pub showers: f64,
   pub snowfall: f64,
-  pub weather_code: f64,
+  pub weather_code: i64,
   pub cloud_cover: f64,
   pub pressure_msl: f64,
   pub surface_pressure: f64,
