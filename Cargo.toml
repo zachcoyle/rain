@@ -8,14 +8,17 @@ anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 env_logger = "0.11.5"
 geohash = "0.13.1"
+pollster = "0.3.0"
 reqwest = { version = "0.12.7", features = ["json", "blocking"] }
 serde = { version = "1.0.208", features = ["derive", "serde_derive"] }
 serde_json = "1.0.126"
-sqlx = { version = "0.8.1", features = ["sqlite"] }
+sqlx = { version = "0.8.1", features = ["sqlite", "runtime-tokio"] }
 surf = "2.3.2"
+tokio = { version = "1.39.3", features = ["full"] }
 vizia = { git = "https://github.com/vizia/vizia", features = [
   "wayland",
   "clipboard",
-  "embedded_fonts",
+  # "embedded_fonts",
   "winit",
 ] }
+xdg = "2.5.2"

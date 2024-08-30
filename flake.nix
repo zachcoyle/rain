@@ -63,6 +63,7 @@
             rustc
             openssl
             pkg-config
+            sqlx-cli
           ];
 
           inputsFrom = builtins.attrValues self.checks;

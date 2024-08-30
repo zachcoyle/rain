@@ -1,5 +1,10 @@
+use std::fs;
+
+use pollster::FutureExt as _;
 use reqwest::blocking::Client;
-use vizia::prelude::*;
+use sqlx::sqlite::SqlitePoolOptions;
+use vizia::{icons::ICON_SUN, prelude::*};
+use xdg::BaseDirectories;
 
 mod models;
 use models::*;
@@ -28,6 +33,11 @@ button:hover {
 .row {
   background-color: #83a598;
 }
+
+.weather_icon {
+  height: 50px;
+  width: 50px;
+}
 "#;
 
 const BASE_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -50,7 +60,7 @@ impl Model for AppData {
   fn event(&mut self, _: &mut EventContext, event: &mut Event) {
     event.map(|app_event, _meta| match app_event {
       AppEvent::SetWeatherData(meteo) => {
-        println!("AppEvent::SetWeatherData({:?})", meteo);
+        println!("AppEvent::SetWeatherData({:#?})", meteo);
         self.weather_data = meteo.clone();
       }
 
@@ -65,9 +75,82 @@ impl Model for AppData {
       AppEvent::ConfirmLocation => {
         println!("AppEvent::ConfirmLocation");
         self.confirmed = true;
+        let add_result = add_location_to_db("yee", &self.geohash).block_on();
+        println!("add result: {:?}", add_result);
       }
     });
   }
+}
+
+// #[derive(FromRow, Debug)]
+// pub struct Location {
+//   id: String,
+//   name: String,
+//   geohash: String,
+// }
+
+async fn add_location_to_db(name: &str, geohash: &str) -> anyhow::Result<()> {
+  println!("INSIDE ADD_LOCATION_TO_DB");
+  let state_home = get_state_home()?;
+  if let Some(pool) = get_database_connection(state_home).await {
+    let query_result = sqlx::query(
+      r#"
+insert into
+  Location (geohash, name)
+values
+  (?, ?);
+"#,
+    )
+    .bind(geohash)
+    .bind(name)
+    .execute(&pool)
+    .await?;
+
+    println!("query_result: {:?}", query_result);
+  }
+  Ok(())
+}
+
+fn get_state_home() -> anyhow::Result<std::path::PathBuf> {
+  let bd = BaseDirectories::with_prefix("rain")?;
+  let state_home = bd.get_state_home();
+  if !state_home.exists() {
+    fs::create_dir(state_home.clone())?;
+  }
+  Ok(state_home)
+}
+
+// refactor me
+async fn get_database_connection(
+  state_home: std::path::PathBuf,
+) -> Option<sqlx::Pool<sqlx::Sqlite>> {
+  println!("getting database connection");
+  let path = state_home;
+  println!("path exists");
+  let db_url = format!("sqlite://{}rain.db?mode=rwc", path.to_str()?);
+  println!("db url: {}", db_url);
+  let pool = SqlitePoolOptions::new()
+    .max_connections(1)
+    .connect(&db_url)
+    .await;
+  println!("pool result: {:?}", pool);
+  Some(pool.ok()?)
+}
+
+// refactor me
+async fn setup_database() -> anyhow::Result<()> {
+  println!("starting db setup");
+  let state_home = get_state_home()?;
+  if let Some(pool) = get_database_connection(state_home).await {
+    println!("pool exists");
+    let migrate_result = sqlx::migrate!()
+      .run(&pool)
+      .await;
+    println!("migration successful? {:?}", migrate_result);
+    migrate_result?;
+  }
+
+  Ok(())
 }
 
 fn get_weather_data(coords: &LatLng) -> Option<Meteo> {
@@ -150,9 +233,9 @@ fn get_weather_data(coords: &LatLng) -> Option<Meteo> {
     .query(&query)
     .send()
     .ok()?;
-  println!("{:?}", response);
+  println!("{:#?}", response);
   let json = response.json::<Meteo>();
-  println!("{:?}", json);
+  // println!("{:#?}", json);
   json.ok()
 }
 
@@ -164,8 +247,11 @@ fn convert_geohash_to_coords(gh: &str) -> Option<LatLng> {
   Some(LatLng { lat: y, lng: x })
 }
 
-fn main() -> Result<(), vizia::ApplicationError> {
+#[tokio::main]
+async fn main() -> Result<(), vizia::ApplicationError> {
   env_logger::init();
+  let _ = setup_database().await;
+
   Application::new(|cx| {
     cx.add_stylesheet(STYLE)
       .expect("Failed to add stylesheet");
@@ -182,6 +268,7 @@ fn main() -> Result<(), vizia::ApplicationError> {
       let coords = lens.get(cx);
       Button::new(cx, |cx| Label::new(cx, "Get Weather!"))
         .on_press(move |ex| {
+          ex.emit(AppEvent::ConfirmLocation);
           ex.spawn(move |cx| {
             if let Some(ll) = &coords.clone() {
               let weather_data = get_weather_data(ll);
@@ -194,6 +281,8 @@ fn main() -> Result<(), vizia::ApplicationError> {
 
     Binding::new(cx, AppData::weather_data, |cx, lens| {
       if let Some(forecast) = lens.get(cx) {
+        Icon::new(cx, ICON_SUN).class("weather_icon");
+
         HStack::new(cx, |cx| {
           VStack::new(cx, |cx| {
             Label::new(cx, "time");
