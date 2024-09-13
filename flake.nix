@@ -13,6 +13,16 @@
       systems = ["x86_64-linux"];
       imports = [];
       perSystem = {pkgs, ...}: let
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
+          openssl
+          stdenv.cc.cc.lib
+          fontconfig
+          freetype
+          wayland
+          xorg.libX11
+          libxkbcommon
+        ]);
+
         rain' = {
           pkgs,
           lib,
@@ -40,9 +50,7 @@
 
           sqlx-db =
             runCommand "sqlx-db-prepare"
-            {
-              nativeBuildInputs = [pkgs.sqlx-cli];
-            }
+            {nativeBuildInputs = [pkgs.sqlx-cli];}
             ''
               mkdir $out
               export DATABASE_URL=sqlite:$out/db.sqlite3
@@ -108,6 +116,8 @@
             '';
 
             preBuildPhases = ["linkDb"];
+
+            inherit LD_LIBRARY_PATH;
             # };
           };
 
@@ -118,6 +128,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [sqlx-cli];
           inputsFrom = [rain];
+          inherit LD_LIBRARY_PATH;
         };
       };
     };
