@@ -29,7 +29,6 @@
           lib,
           gn,
           makeRustPlatform,
-          # rustPlatform,
           clangStdenv,
           ninja,
           fetchFromGitHub,
