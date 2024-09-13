@@ -127,10 +127,12 @@
       in {
         packages.default = rain;
 
-        devShells.default = pkgs.mkShell {
+        devShells.default = pkgs.mkShell.override {stdenv = pkgs.clangStdenv;} {
           buildInputs = with pkgs; [sqlx-cli];
           inputsFrom = [rain];
           inherit LD_LIBRARY_PATH;
+          SKIA_GN_COMMAND = pkgs.lib.getExe pkgs.gn;
+          SKIA_NINJA_COMMAND = pkgs.lib.getExe pkgs.ninja;
         };
       };
     };
