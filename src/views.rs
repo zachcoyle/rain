@@ -2,7 +2,7 @@ use vizia::{
   context::Context,
   icons,
   view::{Handle, View},
-  views::{Icon, Label, VStack},
+  views::{Label, VStack},
 };
 
 pub struct DataCell {
@@ -39,7 +39,8 @@ impl WeatherCode {
     Self { weather_code }.build(cx, |cx| {
       VStack::new(cx, |cx| {
         if let Some(icon_name) = lookup_weather_icon(&weather_code) {
-          Icon::new(cx, icon_name);
+          // Icon::new(cx, icon_name);
+          Label::new(cx, "<Icon>");
         }
         let weather_text =
           lookup_weather_text(&weather_code).unwrap_or("weather description not found");

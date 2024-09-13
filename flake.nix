@@ -2,7 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    fenix.url = "github:nix-community/fenix/monthly";
+    fenix.url = "github:nix-community/fenix";
   };
   outputs = inputs @ {
     nixpkgs,
@@ -91,6 +91,7 @@
               rustPlatform.bindgenHook
               freetype
               fontconfig
+              wayland
             ];
 
             nativeBuildInputs = with pkgs; [
@@ -98,7 +99,7 @@
               pkg-config
             ];
 
-            disallowedReferences = [SKIA_SOURCE_DIR];
+            # disallowedReferences = [SKIA_SOURCE_DIR];
 
             # # FIXME: this needs modified for rustPlatform.buildRustPackage
             # overrideMain = old: {
@@ -115,7 +116,7 @@
         packages.default = rain;
 
         devShells.default = pkgs.mkShell {
-          buildInputs = [];
+          buildInputs = with pkgs; [sqlx-cli];
           inputsFrom = [rain];
         };
       };
