@@ -21,6 +21,7 @@
           wayland
           xorg.libX11
           libxkbcommon
+          libGL
         ]);
 
         rain' = {
@@ -37,6 +38,7 @@
           runCommand,
           freetype,
           fontconfig,
+          libGL,
           ...
         }: let
           inherit (inputs.fenix.packages.${pkgs.system}.minimal) toolchain;
@@ -58,7 +60,7 @@
               sqlx migrate run --source ${srcMigrations}
             '';
         in
-          rustPlatform.buildRustPackage.override {stdenv = clangStdenv;} rec {
+          rustPlatform.buildRustPackage.override {stdenv = clangStdenv;} {
             pname = "rain";
             version = "unstable";
             src = ./.;
@@ -100,6 +102,7 @@
               freetype
               fontconfig
               wayland
+              libGL
             ];
 
             nativeBuildInputs = with pkgs; [
