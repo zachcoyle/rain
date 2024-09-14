@@ -53,7 +53,7 @@ impl WeatherCode {
 impl View for WeatherCode {}
 
 // INFO: https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
-fn lookup_weather_text(weather_code: &i64) -> Option<&str> {
+pub fn lookup_weather_text(weather_code: &i64) -> Option<&str> {
   match weather_code {
     // 00-49 	No precipitation at the station at the time of observation
 

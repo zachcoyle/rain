@@ -77,16 +77,18 @@ impl NewLocationForm {
           Textbox::new(cx, NewLocationFormData::name).on_edit(|ex, name| {
             ex.emit(NewLocationFormEvent::SetName(name));
           });
-        });
+        })
+        .class("location_form_hstack");
         Binding::new(cx, NewLocationFormData::valid, |cx, lens| {
           let valid = lens.get(cx);
-          Button::new(cx, |cx| Label::new(cx, "Submit"))
+          Button::new(cx, |cx| Label::new(cx, "Save Location"))
             .on_press(|ex| {
               ex.emit(NewLocationFormEvent::Submit);
             })
             .disabled(!valid);
         });
-      });
+      })
+      .class("location_form_vstack");
     })
   }
 }

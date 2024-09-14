@@ -26,3 +26,16 @@ button:hover {
   height: 50px;
   width: 50px;
 }
+
+.location_form_vstack {
+  child-space: 1s;
+}
+
+.location_form_hstack {
+  child-space: 1s;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 42;
+}

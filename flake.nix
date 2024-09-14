@@ -111,8 +111,8 @@
 
             # disallowedReferences = [SKIA_SOURCE_DIR];
 
+            # INFO: https://ipetkov.dev/blog/building-with-sqlx-on-nix/
             # # FIXME: this needs modified for rustPlatform.buildRustPackage
-            # overrideMain = old: {
             linkDb = ''
               export DATABASE_URL=sqlite:${sqlx-db}/db.sqlite3
             '';
@@ -120,7 +120,6 @@
             preBuildPhases = ["linkDb"];
 
             inherit LD_LIBRARY_PATH;
-            # };
           };
 
         rain = pkgs.callPackage rain' {};
