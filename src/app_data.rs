@@ -39,15 +39,18 @@ impl Model for AppData {
         println!("New State: {:#?}", self);
       }
 
-      AppEvent::ConfirmLocation(_, _) => {
+      // TODO: i still don't really love how this is being done
+      AppEvent::ConfirmLocation(new_geohash, new_name) => {
         println!("AppEvent::ConfirmLocation");
+        self.new_geohash = new_geohash.to_string();
+        self.new_location_name = new_name.to_string();
         self.location_confirmed = true;
-        // let add_result = add_location_to_db("yee", &self.geohash).block_on();
-        // println!("add result: {:?}", add_result);
-        // if let Some(ll) = self.latlng {
-        //   let weather_data = get_weather_data(&ll);
-        //   let _ = ex.emit(AppEvent::SetWeatherData(weather_data));
-        // }
+        let add_result = add_location_to_db(new_name, new_geohash).block_on();
+        println!("add result: {:?}", add_result);
+        if let Ok((_, lng, lat)) = geohash::decode(new_geohash) {
+          let weather_data = get_weather_data(lat, lng);
+          let _ = ex.emit(AppEvent::SetWeatherData(weather_data));
+        };
         println!("New State: {:#?}", self);
       }
 

@@ -12,7 +12,16 @@ pub enum NewLocationFormEvent {
 pub struct NewLocationFormData {
   pub geohash: String,
   pub name: String,
+  pub valid: bool,
   pub submitted: bool,
+}
+
+fn validate(form_data: NewLocationFormData) -> bool {
+  form_data.name != ""
+    && form_data.geohash != ""
+    && geohash::decode(&form_data.geohash)
+      .ok()
+      .is_some()
 }
 
 impl Model for NewLocationFormData {
@@ -22,27 +31,32 @@ impl Model for NewLocationFormData {
         NewLocationFormEvent::SetName(name) => {
           println!("NewLocationFormEvent::SetName({:#?})", name);
           self.name = name.to_string();
+          self.valid = validate(self.clone());
           println!("New State: {:#?}", self);
         }
 
         NewLocationFormEvent::SetGeohash(geohash) => {
           println!("NewLocationFormEvent::SetGeohash({:#?})", geohash);
           self.geohash = geohash.to_string();
+          self.valid = validate(self.clone());
           println!("New State: {:#?}", self);
         }
 
         NewLocationFormEvent::Submit => {
           println!("NewLocationFormEvent::Submit");
-          self.submitted = true;
-          println!("New State: {:#?}", self);
-          cx.emit(AppEvent::ConfirmLocation(
-            self
-              .name
-              .clone(),
-            self
-              .geohash
-              .clone(),
-          ))
+          if self.valid {
+            self.submitted = true;
+            println!("New State: {:#?}", self);
+
+            cx.emit(AppEvent::ConfirmLocation(
+              self
+                .name
+                .clone(),
+              self
+                .geohash
+                .clone(),
+            ))
+          }
         }
       },
     )
@@ -64,14 +78,13 @@ impl NewLocationForm {
             ex.emit(NewLocationFormEvent::SetName(name));
           });
         });
-        Binding::new(cx, NewLocationFormData::geohash, |cx, lens| {
-          let geohash = lens.get(cx);
-          Binding::new(cx, NewLocationFormData::name, |cx, lens| {
-            let name = lens.get(cx);
-            Button::new(cx, |cx| Label::new(cx, "Submit")).on_press(|ex| {
+        Binding::new(cx, NewLocationFormData::valid, |cx, lens| {
+          let valid = lens.get(cx);
+          Button::new(cx, |cx| Label::new(cx, "Submit"))
+            .on_press(|ex| {
               ex.emit(NewLocationFormEvent::Submit);
-            });
-          });
+            })
+            .disabled(!valid);
         });
       });
     })
