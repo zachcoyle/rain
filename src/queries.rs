@@ -40,71 +40,71 @@ pub async fn setup_database() -> anyhow::Result<()> {
 
 pub async fn get_all_locations() -> anyhow::Result<Vec<Location>> {
   let state_home = get_state_home()?;
-  // if let Some(pool) = get_database_connection(state_home).await {
-  //   let all_locations = sqlx::query_as::<_, Location>("select * from Location;")
-  //     .fetch_all(&pool)
-  //     .await?;
-  //   Ok(all_locations)
-  // } else {
-  //   Err(anyhow::anyhow!("got no locations from db"))
-  // }
-  Err(anyhow::anyhow!(
-    "get_all_locations currently de-implemented"
-  ))
+  if let Some(pool) = get_database_connection(state_home).await {
+    let all_locations = sqlx::query_as::<_, Location>("select * from Location;")
+      .fetch_all(&pool)
+      .await?;
+    Ok(all_locations)
+  } else {
+    Err(anyhow::anyhow!("got no locations from db"))
+  }
+  // Err(anyhow::anyhow!(
+  //   "get_all_locations currently de-implemented"
+  // ))
 }
 
 pub async fn get_latest_location() -> anyhow::Result<Location> {
-  // let state_home = get_state_home()?;
-  // if let Some(pool) = get_database_connection(state_home).await {
-  //   let latest_loc = query_as!(
-  //     Location,
-  //     "
-  //       select
-  //         *
-  //       from
-  //         Location
-  //       limit
-  //         1;
-  //     ",
-  //   )
-  //   .fetch_one(&pool)
-  //   .await?;
-  //
-  //   Ok(latest_loc)
-  // } else {
-  //   Err(anyhow::anyhow!("could not get db connection"))
-  // }
-  Err(anyhow::anyhow!(
-    "get_latest_location currently de-implemented"
-  ))
+  let state_home = get_state_home()?;
+  if let Some(pool) = get_database_connection(state_home).await {
+    let latest_loc = query_as!(
+      Location,
+      "
+        select
+          *
+        from
+          Location
+        limit
+          1;
+      ",
+    )
+    .fetch_one(&pool)
+    .await?;
+
+    Ok(latest_loc)
+  } else {
+    Err(anyhow::anyhow!("could not get db connection"))
+  }
+  // Err(anyhow::anyhow!(
+  //   "get_latest_location currently de-implemented"
+  // ))
 }
 
 pub async fn get_latest_historical_forecast(location: i64) -> anyhow::Result<HistoricalForecast> {
-  // let state_home = get_state_home()?;
-  // if let Some(pool) = get_database_connection(state_home).await {
-  //   let x = sqlx::query_as!(
-  //     HistoricalForecast,
-  //     "
-  //       select
-  //         *
-  //       from
-  //         HistoricalForecast
-  //       where
-  //         location_id = ?
-  //       limit
-  //         1
-  //     ",
-  //     location
-  //   )
-  //   .fetch_one(&pool)
-  //   .await?;
-  //   Ok(x)
-  // } else {
-  //   Err(anyhow::anyhow!("could not get db connection"))
-  // }
-  Err(anyhow::anyhow!(
-    "get_latest_historical_forecast currently de-implemented"
-  ))
+  let state_home = get_state_home()?;
+  if let Some(pool) = get_database_connection(state_home).await {
+    let x = sqlx::query_as!(
+      HistoricalForecast,
+      "
+        select
+          *
+        from
+          HistoricalForecast
+        where
+          location_id = ?
+        limit
+          1
+      ",
+      location
+    )
+    .fetch_one(&pool)
+    .await?;
+    Ok(x)
+  } else {
+    Err(anyhow::anyhow!("could not get db connection"))
+  }
+  // Err(anyhow::anyhow!(
+  //   "get_latest_historical_forecast currently de-implemented"
+  // ))
 }
 
 pub async fn add_forecast_to_db(location: &Location, meteo: &Meteo) -> anyhow::Result<()> {

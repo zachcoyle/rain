@@ -6,12 +6,14 @@ use vizia::prelude::*;
 mod api_models;
 mod app_data;
 mod db_models;
+mod new_location_form;
 mod queries;
 mod views;
 
-use app_data::*;
-use queries::*;
-use views::*;
+use app_data::{rehydrate_from_db, AppData, AppEvent};
+use new_location_form::*;
+use queries::setup_database;
+use views::{DataCell, WeatherCode};
 
 #[tokio::main]
 async fn main() -> Result<(), vizia::ApplicationError> {
@@ -28,58 +30,7 @@ async fn main() -> Result<(), vizia::ApplicationError> {
 
     AppData::default().build(cx);
 
-    if let Ok(ls) = get_all_locations().block_on() {
-      for l in ls {
-        // TabView::new(cx, lens, content)
-      }
-    }
-
-    // FIXME: update these `.on_edit`s
-    Textbox::new(
-      cx,
-      AppData::location.map(|maybe_location| {
-        maybe_location
-          .clone()
-          .map(|l| l.geohash)
-          .unwrap_or("".to_string())
-      }),
-    )
-    .on_edit(|ex, new_geohash| ex.emit(AppEvent::UpdateGeohash(new_geohash)));
-    Textbox::new(
-      cx,
-      AppData::location.map(|maybe_location| {
-        maybe_location
-          .clone()
-          .map(|l| l.name)
-          .unwrap_or("".to_string())
-      }),
-    )
-    .on_edit(|ex, new_location_name| ex.emit(AppEvent::UpdateLocationName(new_location_name)));
-
-    Binding::new(cx, AppData::location, |cx, lens| {
-      let loc = lens.get(cx);
-      let loc_for_button = loc.clone();
-      Button::new(cx, move |cx| Label::new(cx, "Get Weather!"))
-        .on_press(move |ex| {
-          if let Some((lat, lng)) = loc
-            .clone()
-            .and_then(|x| x.coords())
-          {
-            ex.emit(AppEvent::ConfirmLocation(lat.to_string(), lng.to_string()));
-          }
-          ex.spawn(move |cx| {
-            // if let Some(ll) = &coords.clone() {
-            //   let weather_data = get_weather_data(ll);
-            //   let _ = cx.emit(AppEvent::SetWeatherData(weather_data));
-            // }
-          });
-        })
-        .disabled(
-          loc_for_button
-            .and_then(|x| x.coords())
-            .is_none(),
-        );
-    });
+    NewLocationForm::new(cx);
 
     Binding::new(cx, AppData::weather_data, |cx, lens| {
       if let Some(forecast) = lens.get(cx) {

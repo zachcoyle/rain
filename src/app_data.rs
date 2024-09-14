@@ -23,10 +23,11 @@ pub enum AppEvent {
 #[derive(Default, Debug, Lens, Clone)]
 pub struct AppData {
   pub weather_data: Option<Meteo>,
-  pub geohash: String,
+  pub new_geohash: String,
   pub location_confirmed: bool,
-  pub location: Option<Location>,
+  pub saved_location: Option<Location>,
   pub forecast: Option<HistoricalForecast>,
+  pub new_location_name: String,
 }
 
 impl Model for AppData {
@@ -35,39 +36,46 @@ impl Model for AppData {
       AppEvent::SetWeatherData(meteo) => {
         println!("AppEvent::SetWeatherData({:#?})", meteo);
         self.weather_data = meteo.clone();
+        println!("New State: {:#?}", self);
       }
 
       AppEvent::ConfirmLocation(_, _) => {
         println!("AppEvent::ConfirmLocation");
         self.location_confirmed = true;
-        let add_result = add_location_to_db("yee", &self.geohash).block_on();
-        println!("add result: {:?}", add_result);
+        // let add_result = add_location_to_db("yee", &self.geohash).block_on();
+        // println!("add result: {:?}", add_result);
         // if let Some(ll) = self.latlng {
         //   let weather_data = get_weather_data(&ll);
         //   let _ = ex.emit(AppEvent::SetWeatherData(weather_data));
         // }
+        println!("New State: {:#?}", self);
       }
 
       AppEvent::RefreshForecast => {
         println!("AppEvent::RefreshForecast");
         handle_app_event_refresh_forecast(ex, self.clone());
+        println!("New State: {:#?}", self);
       }
 
       AppEvent::Rehydrate(loc, hf) => {
         println!("AppEvent::Rehydrate({:#?})", loc);
-        self.location = Some(loc.clone());
+        self.saved_location = Some(loc.clone());
+        println!("New State: {:#?}", self);
       }
 
       AppEvent::UpdateLocationName(new_location_name) => {
         println!("AppEvent::UpdateLocationName({})", new_location_name);
+        self.new_location_name = new_location_name.to_string();
+        println!("New State: {:#?}", self);
       }
 
       AppEvent::UpdateGeohash(new_geohash) => {
         println!("AppEvent::UpdateGeohash({:?})", new_geohash);
         if new_geohash.len() <= 12 {
-          self.geohash = String::from(new_geohash);
+          // self.geohash = String::from(new_geohash);
           // self.latlng = convert_geohash_to_coords(new_geohash);
         }
+        println!("New State: {:#?}", self);
       }
     });
   }
@@ -75,11 +83,11 @@ impl Model for AppData {
 
 fn handle_app_event_refresh_forecast(ex: &mut EventContext, app_data: AppData) -> Option<()> {
   let (lat, lng) = app_data
-    .location
+    .saved_location
     .clone()?
     .coords()?;
   let api_response = get_weather_data(lat, lng)?;
-  let _ = add_forecast_to_db(&app_data.location?, &api_response);
+  let _ = add_forecast_to_db(&app_data.saved_location?, &api_response);
   // ex.emit(AppEvent::Rehydrate(loc, ()));
   Some(())
 }
