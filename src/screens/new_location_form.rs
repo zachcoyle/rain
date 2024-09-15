@@ -2,8 +2,7 @@ use anyhow::Error;
 use pollster::FutureExt as _;
 use vizia::prelude::*;
 
-use super::app_data::AppEvent;
-use super::queries::add_location_to_db;
+use super::{app_data::AppEvent, queries::add_location_to_db};
 
 pub enum NewLocationFormEvent {
   SetName(String),
