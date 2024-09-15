@@ -1,11 +1,15 @@
+use anyhow::Error;
+use pollster::FutureExt as _;
 use vizia::prelude::*;
 
 use super::app_data::AppEvent;
+use super::queries::add_location_to_db;
 
 pub enum NewLocationFormEvent {
   SetName(String),
   SetGeohash(String),
   Submit,
+  FormError(Error),
 }
 
 #[derive(Default, Debug, Lens, Clone)]
@@ -13,7 +17,8 @@ pub struct NewLocationFormData {
   pub geohash: String,
   pub name: String,
   pub valid: bool,
-  pub submitted: bool,
+  pub submitting: bool,
+  pub error_message: Option<String>,
 }
 
 fn validate(form_data: NewLocationFormData) -> bool {
@@ -44,19 +49,29 @@ impl Model for NewLocationFormData {
 
         NewLocationFormEvent::Submit => {
           println!("NewLocationFormEvent::Submit");
+          self.submitting = true;
           if self.valid {
-            self.submitted = true;
-            println!("New State: {:#?}", self);
-
-            cx.emit(AppEvent::ConfirmLocation(
-              self
-                .name
-                .clone(),
-              self
-                .geohash
-                .clone(),
-            ))
+            match add_location_to_db(&self.name, &self.geohash).block_on() {
+              Ok(()) => cx.emit(AppEvent::ConfirmLocation(
+                self
+                  .name
+                  .clone(),
+                self
+                  .geohash
+                  .clone(),
+              )),
+              Err(e) => {
+                cx.emit(NewLocationFormEvent::FormError(e));
+              }
+            };
           }
+          self.submitting = false;
+        }
+
+        NewLocationFormEvent::FormError(e) => {
+          println!("NewLocationFormEvent::DisplayError");
+          self.error_message = Some(e.to_string());
+          println!("New State: {:#?}", self);
         }
       },
     )
@@ -69,6 +84,11 @@ impl NewLocationForm {
   pub fn new(cx: &mut Context) -> Handle<Self> {
     Self {}.build(cx, |cx| {
       NewLocationFormData::default().build(cx);
+      Binding::new(cx, NewLocationFormData::error_message, |cx, lens| {
+        if let Some(error_message) = lens.get(cx) {
+          Label::new(cx, format!("Error: {}", error_message)).class("error");
+        }
+      });
       VStack::new(cx, |cx| {
         HStack::new(cx, |cx| {
           Textbox::new(cx, NewLocationFormData::geohash)
