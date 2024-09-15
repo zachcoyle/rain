@@ -71,14 +71,18 @@ impl NewLocationForm {
       NewLocationFormData::default().build(cx);
       VStack::new(cx, |cx| {
         HStack::new(cx, |cx| {
-          Textbox::new(cx, NewLocationFormData::geohash).on_edit(|ex, geohash| {
-            ex.emit(NewLocationFormEvent::SetGeohash(geohash));
-          });
-          Textbox::new(cx, NewLocationFormData::name).on_edit(|ex, name| {
-            ex.emit(NewLocationFormEvent::SetName(name));
-          });
+          Textbox::new(cx, NewLocationFormData::geohash)
+            .on_edit(|ex, geohash| {
+              ex.emit(NewLocationFormEvent::SetGeohash(geohash));
+            })
+            .class("form_input");
+          Textbox::new(cx, NewLocationFormData::name)
+            .on_edit(|ex, name| {
+              ex.emit(NewLocationFormEvent::SetName(name));
+            })
+            .class("form_input");
         })
-        .class("location_form_hstack");
+        .class("row");
         Binding::new(cx, NewLocationFormData::valid, |cx, lens| {
           let valid = lens.get(cx);
           Button::new(cx, |cx| Label::new(cx, "Save Location"))
@@ -88,7 +92,7 @@ impl NewLocationForm {
             .disabled(!valid);
         });
       })
-      .class("location_form_vstack");
+      .class("col");
     })
   }
 }

@@ -32,17 +32,10 @@ async fn main() -> Result<(), vizia::ApplicationError> {
     AppData::default().build(cx);
 
     Binding::new(cx, AppData::weather_data, |cx, lens| {
-      if lens
-        .get(cx)
-        .is_none()
-      {
-        NewLocationForm::new(cx);
-      }
-    });
-
-    Binding::new(cx, AppData::weather_data, |cx, lens| {
       if let Some(forecast) = lens.get(cx) {
         ForecastScreen::new(cx, forecast);
+      } else {
+        NewLocationForm::new(cx);
       }
     });
   })

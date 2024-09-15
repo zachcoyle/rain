@@ -27,15 +27,18 @@ button:hover {
   width: 50px;
 }
 
-.location_form_vstack {
-  child-space: 1s;
+vstack.col {
+  child-space: 2s;
 }
 
-.location_form_hstack {
-  child-space: 1s;
+hstack.row {
+  child-space: 2s;
 }
 
 .title {
   font-weight: bold;
   font-size: 42;
+}
+textbox.form_input {
+  width: 100px;
 }
