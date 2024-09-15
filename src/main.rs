@@ -6,15 +6,13 @@ use vizia::prelude::*;
 mod api_models;
 mod app_data;
 mod db_models;
-mod new_location_form;
 mod queries;
-mod today_view;
+mod screens;
 mod views;
 
 use app_data::{rehydrate_from_db, AppData};
-use new_location_form::*;
 use queries::setup_database;
-use today_view::*;
+use screens::{new_location_form::*, today_view::*};
 
 #[tokio::main]
 async fn main() -> Result<(), vizia::ApplicationError> {
