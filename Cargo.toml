@@ -15,6 +15,7 @@ serde_json = "1.0.126"
 sqlx = { version = "0.8.1", features = ["sqlite", "runtime-tokio"] }
 surf = "2.3.2"
 tokio = { version = "1.39.3", features = ["full"] }
+validator = { version = "0.18.1", features = ["derive"] }
 vizia = { git = "https://github.com/vizia/vizia", features = [
   "wayland",
   "clipboard",

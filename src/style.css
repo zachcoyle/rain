@@ -31,7 +31,7 @@ hstack.row {
   child-space: 2s;
 }
 
-.title {
+label.title {
   font-size: 42px;
   font-weight: bold;
 }
