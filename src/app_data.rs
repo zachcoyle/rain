@@ -1,3 +1,6 @@
+use std::thread;
+use std::time;
+
 use pollster::FutureExt as _;
 use reqwest::Client;
 use vizia::prelude::*;
@@ -11,26 +14,21 @@ pub enum AppEvent {
   ConfirmLocation(String, String),
   RefreshForecast,
   Rehydrate(Location, HistoricalForecast),
-  // FailedToRetrieveForecast,
-  // UhOh,
-  // BigUhOh,
-
-  // might be extraneous now
-  UpdateGeohash(String),
-  UpdateLocationName(String),
+  Timer,
 }
 
-#[derive(Default, Debug, Lens, Clone)]
-pub struct AppData {
+#[derive(/*Default,*/ Debug, Lens, Clone)]
+pub struct AppState {
   pub weather_data: Option<Meteo>,
   pub new_geohash: String,
   pub location_confirmed: bool,
   pub saved_location: Option<Location>,
   pub forecast: Option<HistoricalForecast>,
   pub new_location_name: String,
+  pub timer: Timer,
 }
 
-impl Model for AppData {
+impl Model for AppState {
   fn event(&mut self, ex: &mut EventContext, event: &mut Event) {
     event.map(|app_event, _meta| match app_event {
       AppEvent::SetWeatherData(meteo) => {
@@ -66,25 +64,16 @@ impl Model for AppData {
         println!("New State: {:#?}", self);
       }
 
-      AppEvent::UpdateLocationName(new_location_name) => {
-        println!("AppEvent::UpdateLocationName({})", new_location_name);
-        self.new_location_name = new_location_name.to_string();
-        println!("New State: {:#?}", self);
-      }
-
-      AppEvent::UpdateGeohash(new_geohash) => {
-        println!("AppEvent::UpdateGeohash({:?})", new_geohash);
-        if new_geohash.len() <= 12 {
-          // self.geohash = String::from(new_geohash);
-          // self.latlng = convert_geohash_to_coords(new_geohash);
-        }
-        println!("New State: {:#?}", self);
+      AppEvent::Timer => {
+        println!("AppEvent::Timer");
+        // thread::sleep(time::Duration::from_secs(30));
+        ex.emit(AppEvent::Timer);
       }
     });
   }
 }
 
-fn handle_app_event_refresh_forecast(ex: &mut EventContext, app_data: AppData) -> Option<()> {
+fn handle_app_event_refresh_forecast(ex: &mut EventContext, app_data: AppState) -> Option<()> {
   let (lat, lng) = app_data
     .saved_location
     .clone()?
