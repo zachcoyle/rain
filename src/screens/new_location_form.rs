@@ -5,7 +5,7 @@ use vizia::prelude::*;
 
 use super::{app_data::AppEvent, queries::add_location_to_db};
 
-pub enum NewLocationFormEvent {
+enum FormEvent {
   SetName(String),
   SetGeohash(String),
   Submit,
@@ -19,38 +19,32 @@ struct FormState {
   #[validate(length(min = 1))]
   pub name: String,
   pub submitting: bool,
-  pub show_validation_errors: bool,
   pub validation_errors: Option<ValidationErrors>,
   pub error_message: Option<String>,
 }
 
 fn validate_geohash(geohash: &str) -> Result<(), ValidationError> {
+  if geohash == "" {
+    return Err(ValidationError::new("Empty Geohash"));
+  }
   match geohash::decode(geohash) {
     Ok(_) => Ok(()),
     Err(_) => Err(ValidationError::new("Invalid Geohash")),
   }
 }
 
-// fn validate(form_data: NewLocationFormData) -> bool {
-//   form_data.name != ""
-//     && form_data.geohash != ""
-//     && geohash::decode(&form_data.geohash)
-//       .ok()
-//       .is_some()
-// }
-
 impl Model for FormState {
   fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
     event.map(
       |new_location_form_event, _meta| match new_location_form_event {
-        NewLocationFormEvent::SetName(name) => {
+        FormEvent::SetName(name) => {
           println!("NewLocationFormEvent::SetName({:#?})", name);
           self.name = name.to_string();
           // self.valid = validate(self.clone());
           println!("New State: {:#?}", self);
         }
 
-        NewLocationFormEvent::SetGeohash(geohash) => {
+        FormEvent::SetGeohash(geohash) => {
           println!("NewLocationFormEvent::SetGeohash({:#?})", geohash);
           self.geohash = geohash.to_string();
           self.validation_errors = self
@@ -59,7 +53,7 @@ impl Model for FormState {
           println!("New State: {:#?}", self);
         }
 
-        NewLocationFormEvent::Submit => {
+        FormEvent::Submit => {
           println!("NewLocationFormEvent::Submit");
           self.submitting = true;
           if self
@@ -76,14 +70,14 @@ impl Model for FormState {
                   .clone(),
               )),
               Err(e) => {
-                cx.emit(NewLocationFormEvent::FormError(e));
+                cx.emit(FormEvent::FormError(e));
               }
             };
           }
           self.submitting = false;
         }
 
-        NewLocationFormEvent::FormError(e) => {
+        FormEvent::FormError(e) => {
           println!("NewLocationFormEvent::DisplayError");
           self.error_message = Some(e.to_string());
           println!("New State: {:#?}", self);
@@ -108,20 +102,37 @@ impl NewLocationForm {
         HStack::new(cx, |cx| {
           Textbox::new(cx, FormState::geohash)
             .on_edit(|ex, geohash| {
-              ex.emit(NewLocationFormEvent::SetGeohash(geohash));
+              ex.emit(FormEvent::SetGeohash(geohash));
             })
             .class("form_input");
           Textbox::new(cx, FormState::name)
             .on_edit(|ex, name| {
-              ex.emit(NewLocationFormEvent::SetName(name));
+              ex.emit(FormEvent::SetName(name));
             })
             .class("form_input");
         })
         .class("row");
 
+        let l = FormState::validation_errors.map(|x| {
+          if let Some(y) = x {
+            y.0
+              .iter()
+              .map(|x| format!("{:#?}", x.1))
+              .reduce(|a, b| a + &b)
+          } else {
+            None
+          }
+        });
+
+        Binding::new(cx, l, |cx, lens| {
+          if let Some(errors) = lens.get(cx) {
+            Label::new(cx, format!("Errors: {}", errors));
+          };
+        });
+
         Button::new(cx, |cx| Label::new(cx, "Save Location"))
           .on_press(|ex| {
-            ex.emit(NewLocationFormEvent::Submit);
+            ex.emit(FormEvent::Submit);
           })
           .disabled(false);
       })
