@@ -6,6 +6,7 @@ use vizia::prelude::*;
 
 use super::{app_data::AppEvent, queries::add_location_to_db};
 
+#[derive(Debug)]
 enum FormEvent {
   SetName(String),
   SetGeohash(String),
