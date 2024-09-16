@@ -1,6 +1,3 @@
-use std::thread;
-use std::time;
-
 use pollster::FutureExt as _;
 use reqwest::Client;
 use vizia::prelude::*;
@@ -15,9 +12,10 @@ pub enum AppEvent {
   RefreshForecast,
   Rehydrate(Location, HistoricalForecast),
   Timer,
+  ToggleAutoRefresh,
 }
 
-#[derive(/*Default,*/ Debug, Lens, Clone)]
+#[derive(Default, Debug, Lens, Clone)]
 pub struct AppState {
   pub weather_data: Option<Meteo>,
   pub new_geohash: String,
@@ -25,7 +23,7 @@ pub struct AppState {
   pub saved_location: Option<Location>,
   pub forecast: Option<HistoricalForecast>,
   pub new_location_name: String,
-  pub timer: Timer,
+  pub auto_refresh: bool,
 }
 
 impl Model for AppState {
@@ -37,7 +35,7 @@ impl Model for AppState {
         println!("New State: {:#?}", self);
       }
 
-      // TODO: i still don't really love how this is being done
+      // FIXME: this is obsolete
       AppEvent::ConfirmLocation(new_geohash, new_name) => {
         println!("AppEvent::ConfirmLocation");
         self.new_geohash = new_geohash.to_string();
@@ -66,8 +64,21 @@ impl Model for AppState {
 
       AppEvent::Timer => {
         println!("AppEvent::Timer");
-        // thread::sleep(time::Duration::from_secs(30));
-        ex.emit(AppEvent::Timer);
+        if self.auto_refresh {
+          println!("auto_refresh is on!");
+        } else {
+          println!("auto_refresh is off!");
+        }
+        ex.schedule_emit(
+          AppEvent::Timer,
+          std::time::Instant::now() + std::time::Duration::from_secs(30),
+        );
+      }
+
+      AppEvent::ToggleAutoRefresh => {
+        println!("AppEvent::ToggleAutoRefresh");
+        self.auto_refresh = true;
+        println!("New State: {:#?}", self);
       }
     });
   }
