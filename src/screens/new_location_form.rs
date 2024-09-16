@@ -1,6 +1,6 @@
 use anyhow::Error;
 use pollster::FutureExt as _;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 use validator_struct::ValidatorStruct;
 use vizia::prelude::*;
 
@@ -10,7 +10,8 @@ enum FormEvent {
   SetName(String),
   SetGeohash(String),
   Submit,
-  FormError(Error),
+  SubmitError(Error),
+  Validate,
 }
 
 #[derive(Default, Debug, Clone, Lens, Validate, ValidatorStruct)]
@@ -46,23 +47,21 @@ impl Model for FormState {
     event.map(
       |new_location_form_event, _meta| match new_location_form_event {
         FormEvent::SetName(name) => {
-          println!("NewLocationFormEvent::SetName({:#?})", name);
+          println!("FormEvent::SetName({:#?})", name);
           self.name = name.to_string();
-          // self.valid = validate(self.clone());
           println!("New State: {:#?}", self);
+          cx.emit(FormEvent::Validate);
         }
 
         FormEvent::SetGeohash(geohash) => {
-          println!("NewLocationFormEvent::SetGeohash({:#?})", geohash);
+          println!("FormEvent::SetGeohash({:#?})", geohash);
           self.geohash = geohash.to_string();
-          self.validation_errors = self
-            .validate_struct()
-            .err();
           println!("New State: {:#?}", self);
+          cx.emit(FormEvent::Validate);
         }
 
         FormEvent::Submit => {
-          println!("NewLocationFormEvent::Submit");
+          println!("FormEvent::Submit");
           self.submitting = true;
           if self
             .validation_errors
@@ -78,16 +77,24 @@ impl Model for FormState {
                   .clone(),
               )),
               Err(e) => {
-                cx.emit(FormEvent::FormError(e));
+                cx.emit(FormEvent::SubmitError(e));
               }
             };
           }
           self.submitting = false;
         }
 
-        FormEvent::FormError(e) => {
-          println!("NewLocationFormEvent::DisplayError");
+        FormEvent::SubmitError(e) => {
+          println!("FormEvent::DisplayError");
           self.error_message = Some(e.to_string());
+          println!("New State: {:#?}", self);
+        }
+
+        FormEvent::Validate => {
+          println!("FormEvent::Validate");
+          self.validation_errors = self
+            .validate_struct()
+            .err();
           println!("New State: {:#?}", self);
         }
       },
@@ -124,13 +131,25 @@ impl NewLocationForm {
         Binding::new(cx, FormState::validation_errors, |cx, lens| {
           let errors = lens.get(cx);
           Label::new(cx, format!("Errors: {:#?}", errors));
-        });
 
-        Button::new(cx, |cx| Label::new(cx, "Save Location"))
-          .on_press(|ex| {
-            ex.emit(FormEvent::Submit);
-          })
-          .disabled(false);
+          let has_errors = errors
+            .map(|x| {
+              x.geohash
+                .is_some()
+                || x
+                  .name
+                  .is_some()
+            })
+            .unwrap_or(false);
+          Binding::new(cx, FormState::submitting, move |cx, lens| {
+            let submitting = lens.get(cx);
+            Button::new(cx, |cx| Label::new(cx, "Save Location"))
+              .on_press(|ex| {
+                ex.emit(FormEvent::Submit);
+              })
+              .disabled(submitting || has_errors);
+          });
+        });
       })
       .class("col");
     })
