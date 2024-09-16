@@ -1,6 +1,7 @@
 use anyhow::Error;
 use pollster::FutureExt as _;
 use validator::{Validate, ValidationError, ValidationErrors};
+use validator_struct::ValidatorStruct;
 use vizia::prelude::*;
 
 use super::{app_data::AppEvent, queries::add_location_to_db};
@@ -12,15 +13,22 @@ enum FormEvent {
   FormError(Error),
 }
 
-#[derive(Default, Debug, Lens, Clone, Validate)]
+#[derive(Default, Debug, Clone, Lens, Validate, ValidatorStruct)]
+#[validator_struct(derive(Clone, PartialEq, PartialOrd))]
 struct FormState {
   #[validate(custom(function = "validate_geohash"))]
   pub geohash: String,
   #[validate(length(min = 1))]
   pub name: String,
   pub submitting: bool,
-  pub validation_errors: Option<ValidationErrors>,
+  pub validation_errors: Option<FormStateError>,
   pub error_message: Option<String>,
+}
+
+impl vizia::binding::Data for FormStateError {
+  fn same(&self, other: &Self) -> bool {
+    self.geohash == other.geohash && self.name == other.name
+  }
 }
 
 fn validate_geohash(geohash: &str) -> Result<(), ValidationError> {
@@ -48,7 +56,7 @@ impl Model for FormState {
           println!("NewLocationFormEvent::SetGeohash({:#?})", geohash);
           self.geohash = geohash.to_string();
           self.validation_errors = self
-            .validate()
+            .validate_struct()
             .err();
           println!("New State: {:#?}", self);
         }
@@ -113,21 +121,9 @@ impl NewLocationForm {
         })
         .class("row");
 
-        let l = FormState::validation_errors.map(|x| {
-          if let Some(y) = x {
-            y.0
-              .iter()
-              .map(|x| format!("{:#?}", x.1))
-              .reduce(|a, b| a + &b)
-          } else {
-            None
-          }
-        });
-
-        Binding::new(cx, l, |cx, lens| {
-          if let Some(errors) = lens.get(cx) {
-            Label::new(cx, format!("Errors: {}", errors));
-          };
+        Binding::new(cx, FormState::validation_errors, |cx, lens| {
+          let errors = lens.get(cx);
+          Label::new(cx, format!("Errors: {:#?}", errors));
         });
 
         Button::new(cx, |cx| Label::new(cx, "Save Location"))
