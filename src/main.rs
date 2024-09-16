@@ -12,7 +12,7 @@ mod views;
 
 use app_data::{rehydrate_from_db, AppData};
 use queries::setup_database;
-use screens::{new_location_form::*, today_view::*};
+use screens::{location_list::*, new_location_form::*, today_view::*};
 
 #[tokio::main]
 async fn main() -> Result<(), vizia::ApplicationError> {
@@ -28,6 +28,8 @@ async fn main() -> Result<(), vizia::ApplicationError> {
     }
 
     AppData::default().build(cx);
+
+    LocationList::new(cx);
 
     Binding::new(cx, AppData::weather_data, |cx, lens| {
       if let Some(forecast) = lens.get(cx) {

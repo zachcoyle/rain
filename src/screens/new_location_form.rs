@@ -104,6 +104,8 @@ impl Model for FormState {
 
 pub struct NewLocationForm {}
 
+impl View for NewLocationForm {}
+
 impl NewLocationForm {
   pub fn new(cx: &mut Context) -> Handle<Self> {
     Self {}.build(cx, |cx| {
@@ -155,5 +157,3 @@ impl NewLocationForm {
     })
   }
 }
-
-impl View for NewLocationForm {}
