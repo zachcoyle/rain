@@ -33,26 +33,46 @@ pub struct LocationList {}
 
 impl View for LocationList {}
 
+const ITEM_SIZE: usize = 28;
+
 impl LocationList {
   pub fn new(cx: &mut Context) -> Handle<Self> {
     Self {}.build(cx, |cx| {
       LocationListState::default().build(cx);
       cx.emit(LocationListEvent::LoadLocations);
       Label::new(cx, "Saved Locations");
-      Dropdown::new(
+      Binding::new(
         cx,
-        |cx| {
-          Button::new(cx, |cx| Label::new(cx, "Saved Locations"))
-            .on_press(|cx| cx.emit(PopupEvent::Switch));
-        },
-        |cx| {
-          List::new(cx, LocationListState::locations, |cx, _, item| {
-            let location = item.get(cx);
-            HStack::new(cx, |cx| {
-              Label::new(cx, location.name);
-            });
-          })
-          .size(Pixels(500.0));
+        LocationListState::locations.map(|x| x.len()),
+        |cx, lens| {
+          let item_count = lens.get(cx);
+          Dropdown::new(
+            cx,
+            |cx| {
+              Button::new(cx, |cx| Label::new(cx, "Saved Locations"))
+                .on_press(|cx| cx.emit(PopupEvent::Switch));
+            },
+            move |cx| {
+              ScrollView::new(cx, 0.0, 0.0, false, true, move |cx| {
+                List::new(cx, LocationListState::locations, |cx, _, item| {
+                  let location = item.get(cx);
+                  Label::new(
+                    cx,
+                    location
+                      .clone()
+                      .name,
+                  )
+                  .size(Pixels(ITEM_SIZE as f32))
+                  .on_press(move |cx| {
+                    cx.emit(AppEvent::SelectLocation(location.clone()));
+                    cx.emit(PopupEvent::Close);
+                  });
+                })
+                .size(Pixels((ITEM_SIZE * item_count) as f32));
+              })
+              .height(Pixels(250.0));
+            },
+          );
         },
       );
     })

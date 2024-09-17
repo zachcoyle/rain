@@ -69,7 +69,7 @@ impl Model for FormState {
             .is_none()
           {
             match add_location_to_db(&self.name, &self.geohash).block_on() {
-              Ok(()) => cx.emit(AppEvent::ConfirmLocation(
+              Ok(()) => cx.emit(AppEvent::SaveLocation(
                 self
                   .name
                   .clone(),

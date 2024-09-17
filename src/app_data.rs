@@ -8,11 +8,12 @@ use crate::queries::*;
 
 pub enum AppEvent {
   SetWeatherData(Option<Meteo>),
-  ConfirmLocation(String, String),
+  SaveLocation(String, String),
   RefreshForecast,
   Rehydrate(Location, HistoricalForecast),
   Timer,
   ToggleAutoRefresh,
+  SelectLocation(Location),
 }
 
 #[derive(Default, Debug, Lens, Clone)]
@@ -24,6 +25,7 @@ pub struct AppState {
   pub forecast: Option<HistoricalForecast>,
   pub new_location_name: String,
   pub auto_refresh: bool,
+  pub chosen_location: Option<Location>,
 }
 
 impl Model for AppState {
@@ -36,7 +38,7 @@ impl Model for AppState {
       }
 
       // FIXME: this is obsolete
-      AppEvent::ConfirmLocation(new_geohash, new_name) => {
+      AppEvent::SaveLocation(new_geohash, new_name) => {
         println!("AppEvent::ConfirmLocation");
         self.new_geohash = new_geohash.to_string();
         self.new_location_name = new_name.to_string();
@@ -79,6 +81,10 @@ impl Model for AppState {
         println!("AppEvent::ToggleAutoRefresh");
         self.auto_refresh = true;
         println!("New State: {:#?}", self);
+      }
+
+      AppEvent::SelectLocation(location) => {
+        self.chosen_location = Some(location.clone());
       }
     });
   }
