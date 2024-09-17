@@ -31,6 +31,10 @@ hstack.row {
   child-space: 2s;
 }
 
+label.body {
+  font-size: 18px;
+}
+
 label.title {
   font-size: 42px;
   font-weight: bold;

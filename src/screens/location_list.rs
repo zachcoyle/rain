@@ -40,7 +40,9 @@ impl LocationList {
     Self {}.build(cx, |cx| {
       LocationListState::default().build(cx);
       cx.emit(LocationListEvent::LoadLocations);
-      Label::new(cx, "Saved Locations");
+      Label::new(cx, "Saved Locations")
+        .font_size(50)
+        .class("body");
       Binding::new(
         cx,
         LocationListState::locations.map(|x| x.len()),
